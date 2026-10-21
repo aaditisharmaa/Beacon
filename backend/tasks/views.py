@@ -3,6 +3,8 @@ import logging
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from .llm import extract_task
 from .models import Task
@@ -64,3 +66,38 @@ class CaptureView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
         return Response(result)
+
+
+
+
+
+class SnoozeTaskView(APIView):
+    def post(self, request, pk):
+        task = get_object_or_404(Task, pk=pk, user=request.user)
+        if task.status != "pending":
+            return Response(
+                {"error": "Only pending tasks can be snoozed"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        task.snooze_count += 1
+        score, reason = calculate_priority(
+            task.deadline, task.complexity, task.snooze_count
+        )
+        task.priority_score = score
+        task.priority_reason = reason
+        task.save()
+        return Response(TaskSerializer(task).data)
+
+
+class CompleteTaskView(APIView):
+    def post(self, request, pk):
+        task = get_object_or_404(Task, pk=pk, user=request.user)
+        if task.status == "done":
+            return Response(
+                {"error": "Task is already completed"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        task.status = "done"
+        task.completed_at = timezone.now()
+        task.save()
+        return Response(TaskSerializer(task).data)
