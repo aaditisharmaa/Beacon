@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { completeTask, getTasks, snoozeTask } from "./api";
+import Capture from "./Capture";
 
 export default function TaskList({ token, onExpired, onLogout }) {
   const [tasks, setTasks] = useState([]);
@@ -34,6 +35,12 @@ export default function TaskList({ token, onExpired, onLogout }) {
           Log out
         </button>
       </div>
+
+      <Capture
+        token={token}
+        onSaved={() => run(() => Promise.resolve())}
+        onExpired={onExpired}
+      />     
 
       {error && <p className="error">{error}</p>}
       {loading && <p className="muted">Loading...</p>}

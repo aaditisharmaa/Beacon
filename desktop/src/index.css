@@ -89,3 +89,13 @@ button:disabled {
   border: 1px solid #333;
   color: inherit;
 }
+textarea {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #0f1117;
+  color: inherit;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+}

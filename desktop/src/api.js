@@ -19,7 +19,16 @@ async function authFetch(path, token, options = {}) {
     },
   });
   if (res.status === 401) throw new Error("SESSION_EXPIRED");
-  if (!res.ok) throw new Error("Something went wrong");
+  if (!res.ok) {
+    let message = "Something went wrong";
+    try {
+      const data = await res.json();
+      if (typeof data.error === "string") message = data.error;
+    } catch {
+      // response mein JSON nahi tha, default message rehne do
+    }
+    throw new Error(message);
+  }
   return res.json();
 }
 
@@ -30,3 +39,15 @@ export const snoozeTask = (token, id) =>
 
 export const completeTask = (token, id) =>
   authFetch(`/api/tasks/${id}/complete`, token, { method: "POST" });
+
+export const captureText = (token, text) =>
+  authFetch("/api/tasks/capture", token, {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+
+export const createTask = (token, task) =>
+  authFetch("/api/tasks/", token, {
+    method: "POST",
+    body: JSON.stringify(task),
+  });
