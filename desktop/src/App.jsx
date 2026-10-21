@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Login from "./Login";
+import TaskList from "./TaskList";
 
 export default function App() {
   const [tokens, setTokens] = useState(null);
@@ -7,10 +8,10 @@ export default function App() {
   if (!tokens) return <Login onLogin={setTokens} />;
 
   return (
-    <div className="card">
-      <h1>BEACON</h1>
-      <p>Logged in ✅</p>
-      <button onClick={() => setTokens(null)}>Log out</button>
-    </div>
+    <TaskList
+      token={tokens.access}
+      onExpired={() => setTokens(null)}
+      onLogout={() => setTokens(null)}
+    />
   );
 }

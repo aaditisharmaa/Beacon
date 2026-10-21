@@ -9,3 +9,24 @@ export async function login(email, password) {
   if (!res.ok) throw new Error("Wrong email or password");
   return res.json(); // { access, refresh }
 }
+
+async function authFetch(path, token, options = {}) {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (res.status === 401) throw new Error("SESSION_EXPIRED");
+  if (!res.ok) throw new Error("Something went wrong");
+  return res.json();
+}
+
+export const getTasks = (token) => authFetch("/api/tasks/prioritize", token);
+
+export const snoozeTask = (token, id) =>
+  authFetch(`/api/tasks/${id}/snooze`, token, { method: "POST" });
+
+export const completeTask = (token, id) =>
+  authFetch(`/api/tasks/${id}/complete`, token, { method: "POST" });
