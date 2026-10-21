@@ -1,10 +1,15 @@
-from rest_framework import generics
+import logging
+
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .llm import extract_task
 from .models import Task
 from .priority import calculate_priority
 from .serializers import TaskSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class TaskListCreateView(generics.ListCreateAPIView):
@@ -37,3 +42,25 @@ class PrioritizedTasksView(APIView):
             task.save(update_fields=["priority_score", "priority_reason"])
         tasks.sort(key=lambda t: t.priority_score, reverse=True)
         return Response(TaskSerializer(tasks, many=True).data)
+
+
+class CaptureView(APIView):
+    def post(self, request):
+        text = (request.data.get("text") or "").strip()
+        if not text:
+            return Response(
+                {"error": "text is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if len(text) > 5000:
+            return Response(
+                {"error": "text is too long"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            result = extract_task(text)
+        except Exception:
+            logger.exception("Capture failed")
+            return Response(
+                {"error": "AI extraction failed, please enter the task manually"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        return Response(result)
