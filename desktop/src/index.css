@@ -147,3 +147,31 @@ textarea {
   padding: 4px 10px;
   border-radius: 999px;
 }
+.avatar-mode,
+.avatar-mode body {
+  background: transparent;
+  min-height: 0;
+  overflow: hidden;
+}
+.avatar {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.bubble {
+  background: #1a1d27;
+  color: #e8e8ef;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  text-align: center;
+}
+.pet {
+  font-size: 72px;
+  line-height: 1;
+}

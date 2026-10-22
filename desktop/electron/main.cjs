@@ -1,6 +1,8 @@
 const { app, BrowserWindow, shell } = require("electron");
 
-function createWindow() {
+const APP_URL = "http://localhost:5173";
+
+function createMainWindow() {
   const win = new BrowserWindow({
     width: 1000,
     height: 700,
@@ -16,13 +18,43 @@ function createWindow() {
     return { action: "deny" };
   });
 
-  win.loadURL("http://localhost:5173");
+  win.loadURL(APP_URL);
+  return win;
+}
+
+function createAvatarWindow() {
+  const avatar = new BrowserWindow({
+    width: 200,
+    height: 200,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
+    hasShadow: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  avatar.loadURL(`${APP_URL}/#/avatar`);
+  return avatar;
+}
+
+function startApp() {
+  const mainWin = createMainWindow();
+  const avatarWin = createAvatarWindow();
+
+  // main window band hone par avatar bhi band, warna app band hi nahi hoga
+  mainWin.on("closed", () => {
+    if (!avatarWin.isDestroyed()) avatarWin.close();
+  });
 }
 
 app.whenReady().then(() => {
-  createWindow();
+  startApp();
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) startApp();
   });
 });
 
