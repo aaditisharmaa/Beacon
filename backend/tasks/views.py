@@ -1,15 +1,17 @@
 import logging
 
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
 
-from .llm import extract_task
-from .models import Task
+from .llm import extract_task, generate_roadmap
+from .models import Roadmap, Task
+from .planning import choose_plan_type
 from .priority import calculate_priority
-from .serializers import TaskSerializer
+from .serializers import RoadmapSerializer, TaskSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +70,6 @@ class CaptureView(APIView):
         return Response(result)
 
 
-
-
-
 class SnoozeTaskView(APIView):
     def post(self, request, pk):
         task = get_object_or_404(Task, pk=pk, user=request.user)
@@ -101,3 +100,55 @@ class CompleteTaskView(APIView):
         task.completed_at = timezone.now()
         task.save()
         return Response(TaskSerializer(task).data)
+
+
+class RoadmapView(APIView):
+    def get(self, request, pk):
+        task = get_object_or_404(Task, pk=pk, user=request.user)
+        roadmap = (
+            task.roadmaps.filter(is_active=True).order_by("-created_at").first()
+        )
+        if not roadmap:
+            return Response(
+                {"error": "No roadmap yet"}, status=status.HTTP_404_NOT_FOUND
+            )
+        return Response(RoadmapSerializer(roadmap).data)
+
+    def post(self, request, pk):
+        task = get_object_or_404(Task, pk=pk, user=request.user)
+        if task.status != "pending":
+            return Response(
+                {"error": "Only pending tasks can have a roadmap"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        hours_left = (task.deadline - timezone.now()).total_seconds() / 3600
+        plan_type = choose_plan_type(hours_left)
+        current = (
+            task.roadmaps.filter(is_active=True).order_by("-created_at").first()
+        )
+
+        # plan sahi type ka pehle se hai toh dobara AI ko mat bulao
+        if current and current.plan_type == plan_type:
+            return Response({**RoadmapSerializer(current).data, "replaced": False})
+
+        try:
+            result = generate_roadmap(
+                task.title, plan_type, hours_left, task.complexity
+            )
+        except Exception:
+            logger.exception("Roadmap generation failed")
+            return Response(
+                {"error": "Could not generate a roadmap, please try again"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        with transaction.atomic():
+            replaced = current is not None
+            task.roadmaps.filter(is_active=True).update(is_active=False)
+            roadmap = Roadmap.objects.create(task=task, plan_type=plan_type, **result)
+
+        return Response(
+            {**RoadmapSerializer(roadmap).data, "replaced": replaced},
+            status=status.HTTP_201_CREATED,
+        )

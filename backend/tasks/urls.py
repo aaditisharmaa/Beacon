@@ -6,6 +6,8 @@ from .views import (
     PrioritizedTasksView,
     SnoozeTaskView,
     TaskListCreateView,
+    RoadmapView,
+
 )
 
 urlpatterns = [
@@ -13,5 +15,6 @@ urlpatterns = [
     path("prioritize", PrioritizedTasksView.as_view()),
     path("capture", CaptureView.as_view()),
     path("<uuid:pk>/snooze", SnoozeTaskView.as_view()),
+    path("<uuid:pk>/roadmap", RoadmapView.as_view()),
     path("<uuid:pk>/complete", CompleteTaskView.as_view()),
 ]

@@ -18,3 +18,25 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Roadmap(models.Model):
+    PLAN_TYPES = [("full", "Full"), ("survival", "Survival")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="roadmaps")
+    plan_type = models.CharField(max_length=10, choices=PLAN_TYPES)
+    steps = models.JSONField(default=list)
+    resources = models.JSONField(default=list)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["task"],
+                condition=models.Q(is_active=True),
+                name="one_active_roadmap_per_task",
+            )
+        ]
+    def __str__(self):
+        return f"{self.task.title} ({self.plan_type})"

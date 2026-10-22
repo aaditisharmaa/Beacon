@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from .models import Task
+from .models import Roadmap, Task
+
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -20,3 +21,9 @@ class TaskSerializer(serializers.ModelSerializer):
         if not 1 <= value <= 5:
             raise serializers.ValidationError("Complexity must be between 1 and 5")
         return value
+
+
+class RoadmapSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Roadmap
+        fields = ["id", "task", "plan_type", "steps", "resources", "is_active", "created_at"]
