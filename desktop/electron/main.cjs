@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, shell } = require("electron");
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -9,6 +9,13 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
+
+  // links app ke andar nahi, asli browser mein khulein (sirf https)
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith("https://")) shell.openExternal(url);
+    return { action: "deny" };
+  });
+
   win.loadURL("http://localhost:5173");
 }
 

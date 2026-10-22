@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { completeTask, getTasks, snoozeTask } from "./api";
 import Capture from "./Capture";
+import Roadmap from "./Roadmap";
+import { completeTask, getTasks, snoozeTask } from "./api";
 
 export default function TaskList({ token, onExpired, onLogout }) {
   const [tasks, setTasks] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [openId, setOpenId] = useState(null);
 
   async function run(action) {
     try {
@@ -40,7 +42,7 @@ export default function TaskList({ token, onExpired, onLogout }) {
         token={token}
         onSaved={() => run(() => Promise.resolve())}
         onExpired={onExpired}
-      />     
+      />
 
       {error && <p className="error">{error}</p>}
       {loading && <p className="muted">Loading...</p>}
@@ -59,6 +61,12 @@ export default function TaskList({ token, onExpired, onLogout }) {
             Due: {new Date(task.deadline).toLocaleString()}
           </p>
           <div className="actions">
+            <button
+              className="ghost"
+              onClick={() => setOpenId(openId === task.id ? null : task.id)}
+            >
+              {openId === task.id ? "Hide roadmap" : "Roadmap"}
+            </button>
             <button onClick={() => run(() => snoozeTask(token, task.id))}>
               Snooze
             </button>
@@ -66,6 +74,9 @@ export default function TaskList({ token, onExpired, onLogout }) {
               Done
             </button>
           </div>
+          {openId === task.id && (
+            <Roadmap token={token} taskId={task.id} onExpired={onExpired} />
+          )}
         </div>
       ))}
     </div>

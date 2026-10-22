@@ -51,3 +51,6 @@ export const createTask = (token, task) =>
     method: "POST",
     body: JSON.stringify(task),
   });
+
+export const getRoadmap = (token, id) =>
+  authFetch(`/api/tasks/${id}/roadmap`, token, { method: "POST" });
