@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { captureText, createTask } from "./api";
-
 // ISO time ko <input type="datetime-local"> ke format mein badalta hai
 function toLocalInput(iso) {
   if (!iso) return "";
@@ -11,11 +10,18 @@ function toLocalInput(iso) {
     .slice(0, 16);
 }
 
-export default function Capture({ token, onSaved, onExpired }) {
+export default function Capture({ token, onSaved, onExpired, incoming  }) {
   const [text, setText] = useState("");
   const [draft, setDraft] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+    // avatar pe click se aaya clipboard text
+  useEffect(() => {
+    if (!incoming?.text) return;
+    setText(incoming.text);
+    setDraft(null);
+    setError("");
+  }, [incoming]);
 
   function handleError(err) {
     if (err.message === "SESSION_EXPIRED") onExpired();

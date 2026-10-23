@@ -68,7 +68,7 @@ function TaskCard({ task, token, run, openId, setOpenId, onExpired, front }) {
   );
 }
 
-export default function TaskList({ token, onExpired, onStats }) {
+export default function TaskList({ token, onExpired, onStats, incoming }) {
   const [tasks, setTasks] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -131,6 +131,7 @@ export default function TaskList({ token, onExpired, onStats }) {
           token={token}
           onSaved={() => run(() => Promise.resolve())}
           onExpired={onExpired}
+          incoming={incoming}
         />
 
         {error && <p className="error">{error}</p>}

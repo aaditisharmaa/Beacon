@@ -1,8 +1,17 @@
 const path = require("path");
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  clipboard,
+  ipcMain,
+  screen,
+  shell,
+} = require("electron");
 
 const APP_URL = "http://localhost:5173";
 const TONES = ["friendly", "nudging", "strict"];
+const AVATAR_W = 280;
+const AVATAR_H = 240;
 
 let mainWin = null;
 let avatarWin = null;
@@ -31,6 +40,39 @@ ipcMain.on("avatar:update", (event, state) => {
   sendStateToAvatar();
 });
 
+// avatar ko pakad ke ghumana: window ko dx, dy se khiskao
+ipcMain.on("avatar:move", (event, dx, dy) => {
+  if (!avatarWin || avatarWin.isDestroyed()) return;
+  if (event.sender !== avatarWin.webContents) return;
+  if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+  if (Math.abs(dx) > 400 || Math.abs(dy) > 400) return;
+  const [x, y] = avatarWin.getPosition();
+  avatarWin.setPosition(Math.round(x + dx), Math.round(y + dy));
+});
+
+// avatar pe click: main window upar lao, aur clipboard ka text Capture box ko bhejo
+// (clipboard sirf isi click par padha jata hai, background mein kabhi nahi)
+ipcMain.on("avatar:click", async (event) => {
+  if (!avatarWin || event.sender !== avatarWin.webContents) return;
+  if (!mainWin || mainWin.isDestroyed()) return;
+
+  if (mainWin.isMinimized()) mainWin.restore();
+  mainWin.show();
+  mainWin.focus();
+
+  // readText kisi Electron version mein Promise deta hai, kisi mein seedha string
+  let raw = "";
+  try {
+    raw = await clipboard.readText();
+  } catch {
+    raw = "";
+  }
+  const text = typeof raw === "string" ? raw.trim().slice(0, 5000) : "";
+  if (text && !mainWin.isDestroyed()) {
+    mainWin.webContents.send("capture:text", text);
+  }
+});
+
 function webPrefs() {
   return {
     contextIsolation: true,
@@ -57,9 +99,14 @@ function createMainWindow() {
 }
 
 function createAvatarWindow() {
+  // screen ke neeche-right corner mein (taskbar ke upar)
+  const { x, y, width, height } = screen.getPrimaryDisplay().workArea;
+
   const win = new BrowserWindow({
-    width: 280,
-    height: 240,
+    width: AVATAR_W,
+    height: AVATAR_H,
+    x: x + width - AVATAR_W - 20,
+    y: y + height - AVATAR_H - 20,
     frame: false,
     transparent: true,
     alwaysOnTop: true,

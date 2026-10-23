@@ -10,6 +10,7 @@ export default function App() {
   const [checking, setChecking] = useState(true);
   const [view, setView] = useState("tasks");
   const [stats, setStats] = useState(null);
+  const [incoming, setIncoming] = useState(null);
 
   function signIn(t) {
     saveTokens(t);
@@ -21,6 +22,7 @@ export default function App() {
     setTokens(null);
     setView("tasks");
     setStats(null);
+    setIncoming(null);
   }
 
   // saved refresh token se naya access token lo
@@ -42,6 +44,16 @@ export default function App() {
       setChecking(false);
     })();
   }, []);
+
+  // avatar pe click hua: Tasks screen kholo aur clipboard ka text Capture ko bhejo
+  useEffect(
+    () =>
+      window.beacon?.onCaptureText((text) => {
+        setView("tasks");
+        setIncoming({ text, at: Date.now() });
+      }),
+    []
+  );
 
   if (checking) return <p className="muted">Loading...</p>;
   if (!tokens) return <Login onLogin={signIn} />;
@@ -132,6 +144,7 @@ export default function App() {
             token={tokens.access}
             onExpired={renew}
             onStats={setStats}
+            incoming={incoming}
           />
         </div>
         {view === "wall" && (
