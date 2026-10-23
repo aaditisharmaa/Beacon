@@ -1,15 +1,49 @@
-const { app, BrowserWindow, shell } = require("electron");
+const path = require("path");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
 
 const APP_URL = "http://localhost:5173";
+const TONES = ["friendly", "nudging", "strict"];
+
+let mainWin = null;
+let avatarWin = null;
+let lastState = null;
+
+function isValidState(s) {
+  return (
+    s !== null &&
+    typeof s === "object" &&
+    TONES.includes(s.tone) &&
+    typeof s.message === "string" &&
+    s.message.length <= 200
+  );
+}
+
+function sendStateToAvatar() {
+  if (avatarWin && !avatarWin.isDestroyed()) {
+    avatarWin.webContents.send("avatar:state", lastState);
+  }
+}
+
+// sirf main window se update lo, avatar window se nahi
+ipcMain.on("avatar:update", (event, state) => {
+  if (!mainWin || event.sender !== mainWin.webContents) return;
+  lastState = isValidState(state) ? state : null;
+  sendStateToAvatar();
+});
+
+function webPrefs() {
+  return {
+    contextIsolation: true,
+    nodeIntegration: false,
+    preload: path.join(__dirname, "preload.cjs"),
+  };
+}
 
 function createMainWindow() {
   const win = new BrowserWindow({
     width: 1000,
     height: 700,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
+    webPreferences: webPrefs(),
   });
 
   // links app ke andar nahi, asli browser mein khulein (sirf https)
@@ -23,31 +57,33 @@ function createMainWindow() {
 }
 
 function createAvatarWindow() {
-  const avatar = new BrowserWindow({
-    width: 200,
-    height: 200,
+  const win = new BrowserWindow({
+    width: 280,
+    height: 240,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     resizable: false,
     skipTaskbar: true,
     hasShadow: false,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
+    webPreferences: webPrefs(),
   });
-  avatar.loadURL(`${APP_URL}/#/avatar`);
-  return avatar;
+  win.loadURL(`${APP_URL}/#/avatar`);
+  // avatar load hote hi jo last state hai wo bhej do
+  win.webContents.on("did-finish-load", sendStateToAvatar);
+  return win;
 }
 
 function startApp() {
-  const mainWin = createMainWindow();
-  const avatarWin = createAvatarWindow();
+  mainWin = createMainWindow();
+  avatarWin = createAvatarWindow();
 
   // main window band hone par avatar bhi band, warna app band hi nahi hoga
   mainWin.on("closed", () => {
-    if (!avatarWin.isDestroyed()) avatarWin.close();
+    if (avatarWin && !avatarWin.isDestroyed()) avatarWin.close();
+    mainWin = null;
+    avatarWin = null;
+    lastState = null;
   });
 }
 

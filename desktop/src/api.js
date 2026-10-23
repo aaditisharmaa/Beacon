@@ -54,3 +54,42 @@ export const createTask = (token, task) =>
 
 export const getRoadmap = (token, id) =>
   authFetch(`/api/tasks/${id}/roadmap`, token, { method: "POST" });
+
+export const getCompleted = (token) =>
+  authFetch("/api/tasks/completed", token);
+
+const STORAGE_KEY = "beacon_tokens";
+
+export function saveTokens(tokens) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
+  } catch {
+    // storage na chale toh bhi app chalegi, bas login yaad nahi rahega
+  }
+}
+
+export function loadTokens() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY));
+  } catch {
+    return null;
+  }
+}
+
+export function clearTokens() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export async function refreshAccess(refresh) {
+  const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh }),
+  });
+  if (!res.ok) throw new Error("SESSION_EXPIRED");
+  return res.json(); // { access }
+}

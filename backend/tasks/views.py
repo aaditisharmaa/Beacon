@@ -152,3 +152,10 @@ class RoadmapView(APIView):
             {**RoadmapSerializer(roadmap).data, "replaced": replaced},
             status=status.HTTP_201_CREATED,
         )
+
+class CompletedTasksView(APIView):
+    def get(self, request):
+        tasks = Task.objects.filter(
+            user=request.user, status="done"
+        ).order_by("-completed_at")
+        return Response(TaskSerializer(tasks, many=True).data)  

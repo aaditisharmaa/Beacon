@@ -1,0 +1,72 @@
+/* sticky wall (Wall.jsx) */
+.sw-board {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #cfc7b6;
+  box-shadow: inset 0 2px 12px rgba(18, 18, 18, 0.12);
+}
+.sw-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+.sw-note {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 18px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--ink);
+  border-radius: 4px;
+  box-shadow: 0 6px 10px rgba(18, 18, 18, 0.18);
+  transform: rotate(var(--rot));
+  z-index: var(--z);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.sw-note:hover {
+  z-index: 9999;
+  transform: rotate(0deg) scale(1.08);
+  box-shadow: 0 12px 22px rgba(18, 18, 18, 0.28);
+}
+.sw-note::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 44px;
+  height: 14px;
+  margin-left: -22px;
+  background: rgba(255, 255, 255, 0.55);
+  transform: rotate(-3deg);
+}
+.sw-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+.sw-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.sw-tag {
+  background: rgba(18, 18, 18, 0.12);
+  padding: 1px 7px;
+  border-radius: 999px;
+}

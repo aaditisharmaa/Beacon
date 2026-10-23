@@ -4,6 +4,7 @@ import { login } from "./api";
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -12,7 +13,7 @@ export default function Login({ onLogin }) {
     setError("");
     setLoading(true);
     try {
-      const tokens = await login(email, password);
+      const tokens = await login(email.trim(), password);
       onLogin(tokens);
     } catch (err) {
       setError(
@@ -29,19 +30,31 @@ export default function Login({ onLogin }) {
     <form className="card" onSubmit={handleSubmit}>
       <h1>BEACON</h1>
       <input
-        type="email"
-        placeholder="Email"
+        type="text"
+        autoComplete="username"
+        placeholder="Email or username"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
       />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
+      <div className="pw">
+        <input
+          type={showPassword ? "text" : "password"}
+          autoComplete="current-password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <button
+          type="button"
+          className="eye"
+          aria-label={showPassword ? "Hide password" : "Show password"}
+          onClick={() => setShowPassword(!showPassword)}
+        >
+          {showPassword ? "🙈" : "👁️"}
+        </button>
+      </div>
       {error && <p className="error">{error}</p>}
       <button type="submit" disabled={loading}>
         {loading ? "Logging in..." : "Log in"}
