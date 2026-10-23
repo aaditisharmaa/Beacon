@@ -30,6 +30,7 @@ class Roadmap(models.Model):
     resources = models.JSONField(default=list)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -38,5 +39,6 @@ class Roadmap(models.Model):
                 name="one_active_roadmap_per_task",
             )
         ]
+
     def __str__(self):
         return f"{self.task.title} ({self.plan_type})"
