@@ -19,6 +19,8 @@ export function taskTone(task) {
   const hoursLeft = hoursLeftFor(task);
   let level = task.snooze_count >= 3 ? 2 : task.snooze_count >= 1 ? 1 : 0;
   if (hoursLeft < 24) level = Math.min(2, level + 1);
+  // planned start nikal gaya aur task abhi bhi pending: ek level upar
+  if (task.planned_start && new Date(task.planned_start) < Date.now()) level = Math.min(2, level + 1);
   return TONES[level];
 }
 
