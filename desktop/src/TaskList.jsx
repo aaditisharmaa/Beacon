@@ -3,7 +3,7 @@ import Calendar from "./Calendar";
 import Capture from "./Capture";
 import Roadmap from "./Roadmap";
 import Sprite from "./Sprite";
-import { completeTask, getCompleted, getNudge, getTasks, snoozeTask } from "./api";
+import { completeTask, getCompleted, getFirstStep, getNudge, getTasks, snoozeTask } from "./api";
 import { computeAvatarState, dueText, taskTone } from "./avatarState";
 
 function greeting() {
@@ -38,8 +38,54 @@ function computeStats(pending, done) {
   };
 }
 
+function FirstStep({ token, taskId, onExpired }) {
+  const [step, setStep] = useState("");
+  const [left, setLeft] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    if (left <= 0) return undefined;
+    const t = setTimeout(() => setLeft((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [left]);
+
+  async function start() {
+    setBusy(true);
+    setErr("");
+    try {
+      const r = await getFirstStep(token, taskId);
+      setStep(r.step);
+      setLeft(300);
+    } catch (e) {
+      if (e.message === "SESSION_EXPIRED") onExpired();
+      else setErr("Could not get a first step, try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const mm = String(Math.floor(left / 60)).padStart(2, "0");
+  const ss = String(left % 60).padStart(2, "0");
+
+  return (
+    <div>
+      {!step && (
+        <button className="ghost" onClick={start} disabled={busy}>
+          {busy ? "Thinking..." : "Start in 5 min"}
+        </button>
+      )}
+      {step && <p><strong>{step}</strong></p>}
+      {step && left > 0 && <p className="muted">Timer: {mm}:{ss}</p>}
+      {step && left === 0 && <p className="muted">Time's up. Keep going if you're in flow!</p>}
+      {err && <p className="error">{err}</p>}
+    </div>
+  );
+}
+
 function TaskCard({ task, token, run, openId, setOpenId, onExpired, front }) {
   return (
+  
     <div className={`task toned tone-${taskTone(task)}${front ? " front" : ""}`}>
       <div className="task-top">
         <strong>{task.title}</strong>
@@ -57,6 +103,7 @@ function TaskCard({ task, token, run, openId, setOpenId, onExpired, front }) {
           Aim to finish by: {new Date(task.internal_deadline).toLocaleString()}
         </p>
       )}
+      <FirstStep token={token} taskId={task.id} onExpired={onExpired} />
       <div className="actions">
         <button
           className="ghost"

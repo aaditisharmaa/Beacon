@@ -119,3 +119,6 @@ export const transcribeAudio = (token, blob) => {
     body: form,
   });
 };
+
+export const getFirstStep = (token, id) =>
+  authFetch(`/api/tasks/${id}/first-step`, token, { method: "POST" });
