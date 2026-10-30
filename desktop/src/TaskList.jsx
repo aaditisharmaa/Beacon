@@ -47,6 +47,11 @@ function TaskCard({ task, token, run, openId, setOpenId, onExpired, front }) {
       </div>
       <p className="muted">{task.priority_reason}</p>
       <p className="muted">Due: {new Date(task.deadline).toLocaleString()}</p>
+      {task.internal_deadline && (
+        <p className="muted">
+          Aim to finish by: {new Date(task.internal_deadline).toLocaleString()}
+        </p>
+      )}
       <div className="actions">
         <button
           className="ghost"

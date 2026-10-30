@@ -8,6 +8,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .buffer import calculate_internal_deadline
 from .llm import extract_task, generate_roadmap
 from .models import Roadmap, Task
 from .nudge import TONES, generate_nudge, time_bucket
@@ -33,6 +34,9 @@ class TaskListCreateView(generics.ListCreateAPIView):
             user=self.request.user,
             priority_score=score,
             priority_reason=reason,
+            internal_deadline=calculate_internal_deadline(
+                data["deadline"], data.get("complexity", 3)
+            ),
         )
 
 
