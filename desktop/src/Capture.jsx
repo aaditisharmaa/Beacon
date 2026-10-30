@@ -30,6 +30,7 @@ export default function Capture({ token, onSaved, onExpired, incoming  }) {
     else setError(err.message);
   }
 
+
   async function extract() {
     setError("");
     setBusy(true);
@@ -121,9 +122,11 @@ export default function Capture({ token, onSaved, onExpired, incoming  }) {
         onChange={(e) => setText(e.target.value)}
       />
       {error && <p className="error">{error}</p>}
-      <button onClick={extract} disabled={busy || !text.trim()}>
-        {busy ? "Reading..." : "Extract task"}
-      </button>
+      <div className="actions">
+        <button onClick={extract} disabled={busy || !text.trim()}>
+          {busy ? "Reading..." : "Extract task"}
+        </button>
+      </div>
     </div>
   );
 }

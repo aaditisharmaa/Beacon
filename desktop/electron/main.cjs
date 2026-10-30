@@ -1,4 +1,5 @@
 ﻿const path = require("path");
+const { captureRegion, ocr } = require("./screenshot.cjs");
 const {
   app,
   BrowserWindow,
@@ -72,6 +73,27 @@ ipcMain.handle("focus:stop", (event) => (fromMain(event) ? focus.stop() : null))
 ipcMain.handle("focus:state", (event) => (fromMain(event) ? focus.getState() : null));
 ipcMain.handle("focus:apps", (event) => (fromMain(event) ? listRunningApps() : []));
 
+ipcMain.handle("shot:avatar", async (event) => {
+  // sirf avatar window se allowed
+  if (!avatarWin || avatarWin.isDestroyed() || event.sender !== avatarWin.webContents) {
+    return { ok: false, error: "Not allowed" };
+  }
+  if (!mainWin || mainWin.isDestroyed()) return { ok: false };
+  try {
+    const png = await captureRegion([mainWin, avatarWin]);
+    if (!png) return { ok: false, cancelled: true };
+    const text = await ocr(png);
+
+    // text Capture box mein bhejo aur main window upar lao
+    if (mainWin.isMinimized()) mainWin.restore();
+    mainWin.show();
+    mainWin.focus();
+    if (text) mainWin.webContents.send("capture:text", text);
+    return { ok: true, hasText: Boolean(text) };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
 // ---------- Avatar ----------
 // sirf main window se update lo, avatar window se nahi
 ipcMain.on("avatar:update", (event, state) => {
@@ -190,3 +212,4 @@ app.on("before-quit", () => focus.stop());
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
+

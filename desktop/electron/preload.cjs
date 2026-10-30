@@ -30,4 +30,6 @@ contextBridge.exposeInMainWorld("beacon", {
     ipcRenderer.on("focus:state", handler);
     return () => ipcRenderer.removeListener("focus:state", handler);
   },
+    // screenshot capture
+  avatarScreenshot: () => ipcRenderer.invoke("shot:avatar"),
 });

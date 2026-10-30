@@ -73,7 +73,7 @@ export default function Avatar() {
 
   function pickScreenshot() {
     setMenuOpen(false);
-    window.beacon?.screenshotClicked();
+    window.beacon?.avatarScreenshot();
   }
 
   return (

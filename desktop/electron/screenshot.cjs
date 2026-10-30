@@ -1,4 +1,4 @@
-// desktop/electron/screenshot.js
+﻿// desktop/electron/screenshot.js
 const { BrowserWindow, desktopCapturer, screen, ipcMain, globalShortcut } = require('electron');
 const path = require('path');
 
@@ -81,7 +81,7 @@ async function captureRegion(windowsToHide = []) {
     show: false,
     backgroundColor: '#000000',
     webPreferences: {
-      preload: path.join(__dirname, 'selector-preload.js'),
+      preload: path.join(__dirname, 'selector-preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
