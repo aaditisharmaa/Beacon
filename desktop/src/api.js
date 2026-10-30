@@ -98,3 +98,10 @@ export const getNudge = (token, id, tone) =>
     method: "POST",
     body: JSON.stringify({ tone }),
   });
+  export const getProfile = (token) => authFetch("/api/auth/profile", token);
+
+export const saveProfile = (token, data) =>
+  authFetch("/api/auth/profile", token, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });

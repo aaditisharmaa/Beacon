@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import FocusPanel from "./FocusPanel";
 import Login from "./Login";
+import Onboarding from "./Onboarding";
 import Sprite from "./Sprite";
 import TaskList from "./TaskList";
 import Wall from "./Wall";
-import { clearTokens, loadTokens, refreshAccess, saveTokens } from "./api";
+import {
+  clearTokens,
+  getProfile,
+  loadTokens,
+  refreshAccess,
+  saveTokens,
+} from "./api";
 
 export default function App() {
   const [tokens, setTokens] = useState(null);
@@ -12,6 +19,8 @@ export default function App() {
   const [view, setView] = useState("tasks");
   const [stats, setStats] = useState(null);
   const [incoming, setIncoming] = useState(null);
+  // undefined = load ho raha hai, null = load nahi hua (app phir bhi chalao)
+  const [profile, setProfile] = useState(undefined);
 
   function signIn(t) {
     saveTokens(t);
@@ -24,6 +33,7 @@ export default function App() {
     setView("tasks");
     setStats(null);
     setIncoming(null);
+    setProfile(undefined);
   }
 
   // saved refresh token se naya access token lo
@@ -46,6 +56,24 @@ export default function App() {
     })();
   }, []);
 
+  // login ke baad profile lao (onboarding dikhani hai ya nahi)
+  useEffect(() => {
+    if (!tokens?.access) return undefined;
+    let cancelled = false;
+    getProfile(tokens.access)
+      .then((p) => {
+        if (!cancelled) setProfile(p);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (err.message === "SESSION_EXPIRED") renew();
+        else setProfile(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tokens?.access]);
+
   // avatar pe click hua: Tasks screen kholo aur clipboard ka text Capture ko bhejo
   useEffect(
     () =>
@@ -56,8 +84,26 @@ export default function App() {
     []
   );
 
+  function profileSaved(p) {
+    setProfile(p);
+    setView("tasks");
+  }
+
   if (checking) return <p className="muted">Loading...</p>;
   if (!tokens) return <Login onLogin={signIn} />;
+  if (profile === undefined) return <p className="muted">Loading...</p>;
+
+  // pehli baar: onboarding poori screen pe
+  if (profile && !profile.onboarded) {
+    return (
+      <Onboarding
+        token={tokens.access}
+        profile={profile}
+        onSaved={profileSaved}
+        onExpired={renew}
+      />
+    );
+  }
 
   return (
     <div className="shell">
@@ -128,11 +174,14 @@ export default function App() {
         </nav>
 
         <div className="side-bottom">
-          <button className="profile-chip" disabled>
+          <button
+            className={"profile-chip" + (view === "profile" ? " active" : "")}
+            onClick={() => setView("profile")}
+          >
             <span className="chip-avatar">
               <Sprite anim="idle" scale={1} />
             </span>
-            <span>My profile</span>
+            <span>{profile?.full_name || "My profile"}</span>
           </button>
           <button className="nav-item logout" onClick={signOut}>
             Log out
@@ -155,6 +204,16 @@ export default function App() {
           <Wall key={tokens.access} token={tokens.access} onExpired={renew} />
         )}
         {view === "focus" && <FocusPanel />}
+        {view === "profile" && profile && (
+          <Onboarding
+            token={tokens.access}
+            profile={profile}
+            editing
+            onSaved={profileSaved}
+            onCancel={() => setView("tasks")}
+            onExpired={renew}
+          />
+        )}
       </main>
     </div>
   );
