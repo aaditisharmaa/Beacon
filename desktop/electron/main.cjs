@@ -1,4 +1,4 @@
-﻿const path = require("path");
+const path = require("path");
 const { captureRegion, ocr } = require("./screenshot.cjs");
 const {
   app,
@@ -7,6 +7,7 @@ const {
   ipcMain,
   Notification,
   screen,
+  session,
   shell,
 } = require("electron");
 const { createFocus, listRunningApps, startPowerShellWatcher } = require("./focus.cjs");
@@ -135,6 +136,18 @@ ipcMain.on("avatar:click", async (event) => {
   }
 });
 
+// avatar menu se "Speak": main window upar lao, Capture ko recording shuru karne bolo
+// (mic sirf isi click ke baad khulta hai)
+ipcMain.on("avatar:speak", (event) => {
+  if (!avatarWin || avatarWin.isDestroyed() || event.sender !== avatarWin.webContents) return;
+  if (!mainWin || mainWin.isDestroyed()) return;
+
+  if (mainWin.isMinimized()) mainWin.restore();
+  mainWin.show();
+  mainWin.focus();
+  mainWin.webContents.send("voice:start");
+});
+
 function webPrefs() {
   return {
     contextIsolation: true,
@@ -200,6 +213,22 @@ function startApp() {
 }
 
 app.whenReady().then(() => {
+  // sirf apna app mic maange toh allow, video ya baaki permissions deny
+  session.defaultSession.setPermissionRequestHandler(
+    (_wc, permission, callback, details) => {
+      const types = details?.mediaTypes ?? [];
+      const audioOnly = types.every((t) => t === "audio");
+      const ok =
+        permission === "media" &&
+        audioOnly &&
+        String(details?.requestingUrl || "").startsWith(APP_URL);
+      callback(ok);
+    }
+  );
+  session.defaultSession.setPermissionCheckHandler(
+    (_wc, permission, origin) =>
+      permission === "media" && String(origin || "").startsWith(APP_URL)
+  );
   startApp();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) startApp();

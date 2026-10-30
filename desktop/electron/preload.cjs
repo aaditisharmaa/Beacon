@@ -32,4 +32,12 @@ contextBridge.exposeInMainWorld("beacon", {
   },
     // screenshot capture
   avatarScreenshot: () => ipcRenderer.invoke("shot:avatar"),
+
+  // voice capture
+  avatarSpeak: () => ipcRenderer.send("avatar:speak"),
+  onVoiceStart: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on("voice:start", handler);
+    return () => ipcRenderer.removeListener("voice:start", handler);
+  },
 });

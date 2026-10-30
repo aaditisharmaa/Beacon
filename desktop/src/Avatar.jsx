@@ -76,6 +76,11 @@ export default function Avatar() {
     window.beacon?.avatarScreenshot();
   }
 
+  function pickSpeak() {
+    setMenuOpen(false);
+    window.beacon?.avatarSpeak();
+  }
+
   return (
     <div className="avatar">
       {menuOpen ? (

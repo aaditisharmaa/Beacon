@@ -14,7 +14,10 @@ async function authFetch(path, token, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      // FormData pe browser khud boundary lagata hai, JSON header nahi lagana
+      ...(options.body instanceof FormData
+        ? {}
+        : { "Content-Type": "application/json" }),
       Authorization: `Bearer ${token}`,
     },
   });
@@ -93,15 +96,26 @@ export async function refreshAccess(refresh) {
   if (!res.ok) throw new Error("SESSION_EXPIRED");
   return res.json(); // { access }
 }
+
 export const getNudge = (token, id, tone) =>
   authFetch(`/api/tasks/${id}/nudge`, token, {
     method: "POST",
     body: JSON.stringify({ tone }),
   });
-  export const getProfile = (token) => authFetch("/api/auth/profile", token);
+
+export const getProfile = (token) => authFetch("/api/auth/profile", token);
 
 export const saveProfile = (token, data) =>
   authFetch("/api/auth/profile", token, {
     method: "PUT",
     body: JSON.stringify(data),
   });
+
+export const transcribeAudio = (token, blob) => {
+  const form = new FormData();
+  form.append("audio", blob, "voice.webm");
+  return authFetch("/api/tasks/transcribe", token, {
+    method: "POST",
+    body: form,
+  });
+};
