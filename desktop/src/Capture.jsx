@@ -63,6 +63,7 @@ export default function Capture({ token, onSaved, onExpired, incoming }) {
         title: r.title,
         deadline: toLocalInput(r.deadline),
         complexity: r.complexity,
+        planned_start: toLocalInput(new Date(Date.now() + 2 * 3600 * 1000).toISOString()),
       });
     } catch (err) {
       handleError(err);
@@ -181,6 +182,7 @@ export default function Capture({ token, onSaved, onExpired, incoming }) {
         title: draft.title.trim(),
         deadline: new Date(draft.deadline).toISOString(),
         complexity: Number(draft.complexity),
+        planned_start: draft.planned_start ? new Date(draft.planned_start).toISOString() : null,
       });
       setText("");
       setDraft(null);
@@ -218,6 +220,16 @@ export default function Capture({ token, onSaved, onExpired, incoming }) {
             value={draft.complexity}
             onChange={(e) =>
               setDraft({ ...draft, complexity: e.target.value })
+            }
+          />
+        </label>
+        <label className="muted">
+          When will you start?{" "}
+          <input
+            type="datetime-local"
+            value={draft.planned_start || ""}
+            onChange={(e) =>
+              setDraft({ ...draft, planned_start: e.target.value })
             }
           />
         </label>

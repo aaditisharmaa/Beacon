@@ -10,6 +10,7 @@ class Task(models.Model):
     deadline = models.DateTimeField()
     # apna target, real deadline se pehle (buffer complexity ke hisaab se)
     internal_deadline = models.DateTimeField(null=True, blank=True)
+    planned_start = models.DateTimeField(null=True, blank=True)
     complexity = models.IntegerField(default=3)          # 1 se 5
     snooze_count = models.IntegerField(default=0)
     status = models.CharField(max_length=20, default="pending")

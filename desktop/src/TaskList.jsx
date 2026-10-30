@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Calendar from "./Calendar";
 import Capture from "./Capture";
 import Roadmap from "./Roadmap";
@@ -47,6 +47,11 @@ function TaskCard({ task, token, run, openId, setOpenId, onExpired, front }) {
       </div>
       <p className="muted">{task.priority_reason}</p>
       <p className="muted">Due: {new Date(task.deadline).toLocaleString()}</p>
+      {task.planned_start && (
+        <p className="muted">
+          You will start: {new Date(task.planned_start).toLocaleString()}
+        </p>
+      )}
       {task.internal_deadline && (
         <p className="muted">
           Aim to finish by: {new Date(task.internal_deadline).toLocaleString()}
