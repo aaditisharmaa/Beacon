@@ -12,12 +12,22 @@ contextBridge.exposeInMainWorld("beacon", {
   // avatar: ghumana aur click
   moveAvatar: (dx, dy) => ipcRenderer.send("avatar:move", dx, dy),
   avatarClicked: () => ipcRenderer.send("avatar:click"),
-  screenshotClicked: () => ipcRenderer.send("avatar:screenshot"),
 
   // avatar click -> main window: clipboard ka text Capture box mein
   onCaptureText: (callback) => {
     const handler = (_event, text) => callback(text);
     ipcRenderer.on("capture:text", handler);
     return () => ipcRenderer.removeListener("capture:text", handler);
+  },
+
+  // focus mode
+  focusStart: (opts) => ipcRenderer.invoke("focus:start", opts),
+  focusStop: () => ipcRenderer.invoke("focus:stop"),
+  focusGetState: () => ipcRenderer.invoke("focus:state"),
+  focusApps: () => ipcRenderer.invoke("focus:apps"),
+  onFocusState: (callback) => {
+    const handler = (_event, state) => callback(state);
+    ipcRenderer.on("focus:state", handler);
+    return () => ipcRenderer.removeListener("focus:state", handler);
   },
 });

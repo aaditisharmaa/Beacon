@@ -1,0 +1,103 @@
+/* focus mode (FocusPanel.jsx) */
+.fm-page {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fm-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 640px;
+}
+.fm-active {
+  align-items: flex-start;
+}
+.fm-label {
+  margin: 0;
+  font-weight: 700;
+  font-size: 14px;
+}
+.fm-clock {
+  margin: 0;
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.fm-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.fm-between {
+  justify-content: space-between;
+}
+.fm-chip {
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+}
+.fm-chip.on {
+  background: var(--ink);
+  color: #fff;
+}
+.fm-apps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.fm-app {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fm-app input {
+  width: auto;
+  padding: 0;
+  margin: 0;
+}
+.fm-summary {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #fff1c9;
+  color: #7a5a00;
+  font-size: 13px;
+}
+.fm-privacy {
+  margin-top: 4px;
+}
+.fm-custom {
+  width: 150px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+.fm-custom.on {
+  background: var(--ink);
+  color: #fff;
+}
+.fm-custom.on::placeholder {
+  color: #ccc;
+}

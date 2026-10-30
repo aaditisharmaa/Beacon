@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import FocusPanel from "./FocusPanel";
 import Login from "./Login";
 import Sprite from "./Sprite";
 import TaskList from "./TaskList";
@@ -115,8 +116,11 @@ export default function App() {
           </button>
 
           <p className="nav-label tools">Tools</p>
-          <button className="nav-item" disabled>
-            Focus mode <span className="soon">soon</span>
+          <button
+            className={"nav-item" + (view === "focus" ? " active" : "")}
+            onClick={() => setView("focus")}
+          >
+            Focus mode
           </button>
           <button className="nav-item" disabled>
             Settings <span className="soon">soon</span>
@@ -150,6 +154,7 @@ export default function App() {
         {view === "wall" && (
           <Wall key={tokens.access} token={tokens.access} onExpired={renew} />
         )}
+        {view === "focus" && <FocusPanel />}
       </main>
     </div>
   );

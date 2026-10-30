@@ -1,14 +1,14 @@
-const path = require("path");
+﻿const path = require("path");
 const {
   app,
   BrowserWindow,
   clipboard,
   ipcMain,
+  Notification,
   screen,
   shell,
 } = require("electron");
-const { captureRegion, ocr } = require('./screenshot.cjs');
-console.log("screenshot exports:", Object.keys(require('./screenshot.cjs')));
+const { createFocus, listRunningApps, startPowerShellWatcher } = require("./focus.cjs");
 
 const APP_URL = "http://localhost:5173";
 const TONES = ["friendly", "nudging", "strict"];
@@ -17,7 +17,8 @@ const AVATAR_H = 240;
 
 let mainWin = null;
 let avatarWin = null;
-let lastState = null;
+let lastState = null; // task wali line (TaskList bhejta hai)
+let avatarOverride = null; // Focus mode ki line, jab tak hai tab tak ye upar rehti hai
 
 function isValidState(s) {
   return (
@@ -31,13 +32,50 @@ function isValidState(s) {
 
 function sendStateToAvatar() {
   if (avatarWin && !avatarWin.isDestroyed()) {
-    avatarWin.webContents.send("avatar:state", lastState);
+    avatarWin.webContents.send("avatar:state", avatarOverride ?? lastState);
   }
 }
 
+// ---------- Focus mode ----------
+const focus = createFocus({
+  startWatcher: startPowerShellWatcher,
+  onState: (state) => {
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.webContents.send("focus:state", state);
+    }
+  },
+  onAvatar: (state) => {
+    avatarOverride = isValidState(state) ? state : null;
+    sendStateToAvatar();
+  },
+  onFinish: (summary) => {
+    if (Notification.isSupported()) {
+      new Notification({
+        title: "Focus session complete",
+        body:
+          summary.violations === 0
+            ? `${summary.minutes} minutes, not a single distraction!`
+            : `${summary.minutes} minutes done, strayed ${summary.violations} time(s).`,
+      }).show();
+    }
+  },
+});
+
+function fromMain(event) {
+  return mainWin && !mainWin.isDestroyed() && event.sender === mainWin.webContents;
+}
+
+ipcMain.handle("focus:start", (event, opts) =>
+  fromMain(event) ? focus.start(opts) : { ok: false, error: "Not allowed" }
+);
+ipcMain.handle("focus:stop", (event) => (fromMain(event) ? focus.stop() : null));
+ipcMain.handle("focus:state", (event) => (fromMain(event) ? focus.getState() : null));
+ipcMain.handle("focus:apps", (event) => (fromMain(event) ? listRunningApps() : []));
+
+// ---------- Avatar ----------
 // sirf main window se update lo, avatar window se nahi
 ipcMain.on("avatar:update", (event, state) => {
-  if (!mainWin || event.sender !== mainWin.webContents) return;
+  if (!fromMain(event)) return;
   lastState = isValidState(state) ? state : null;
   sendStateToAvatar();
 });
@@ -73,29 +111,6 @@ ipcMain.on("avatar:click", async (event) => {
   if (text && !mainWin.isDestroyed()) {
     mainWin.webContents.send("capture:text", text);
   }
-});
-// avatar ke menu se Screenshot: area select -> OCR -> text Capture box ko
-ipcMain.on("avatar:screenshot", async (event) => {
-  console.log("avatar:screenshot aaya");
-  if (!avatarWin || event.sender !== avatarWin.webContents) return;
-  if (!mainWin || mainWin.isDestroyed()) return;
-
-  let text = "";
-  try {
-    const png = await captureRegion([avatarWin, mainWin]);
-    if (!png) return; // user ne Esc dabaya ya chhota drag kiya
-    const raw = await ocr(png);
-    text = raw.trim().slice(0, 5000);
-  } catch (err) {
-    console.error("screenshot capture failed:", err);
-    return;
-  }
-
-  if (!mainWin || mainWin.isDestroyed()) return;
-  if (mainWin.isMinimized()) mainWin.restore();
-  mainWin.show();
-  mainWin.focus();
-  if (text) mainWin.webContents.send("capture:text", text);
 });
 
 function webPrefs() {
@@ -141,7 +156,8 @@ function createAvatarWindow() {
     webPreferences: webPrefs(),
   });
   win.loadURL(`${APP_URL}/#/avatar`);
-  // avatar load hote hi jo last state hai wo bhej do
+  if (process.env.AVATAR_DEBUG) win.webContents.openDevTools({ mode: "detach" });
+  // avatar load hote hi jo state hai wo bhej do
   win.webContents.on("did-finish-load", sendStateToAvatar);
   return win;
 }
@@ -150,12 +166,14 @@ function startApp() {
   mainWin = createMainWindow();
   avatarWin = createAvatarWindow();
 
-  // main window band hone par avatar bhi band, warna app band hi nahi hoga
+  // main window band hone par avatar bhi band, aur focus watcher bhi
   mainWin.on("closed", () => {
+    focus.stop();
     if (avatarWin && !avatarWin.isDestroyed()) avatarWin.close();
     mainWin = null;
     avatarWin = null;
     lastState = null;
+    avatarOverride = null;
   });
 }
 
@@ -165,6 +183,9 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) startApp();
   });
 });
+
+// PowerShell watcher kabhi peeche chalta na reh jaye
+app.on("before-quit", () => focus.stop());
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
