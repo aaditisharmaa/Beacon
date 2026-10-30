@@ -1,5 +1,6 @@
 import logging
 
+from django.core.cache import cache
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -9,6 +10,7 @@ from rest_framework.views import APIView
 
 from .llm import extract_task, generate_roadmap
 from .models import Roadmap, Task
+from .nudge import TONES, generate_nudge, time_bucket
 from .planning import choose_plan_type
 from .priority import calculate_priority
 from .serializers import RoadmapSerializer, TaskSerializer
@@ -153,9 +155,42 @@ class RoadmapView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-class CompletedTasksView(APIView):
-    def get(self, request):
-        tasks = Task.objects.filter(
-            user=request.user, status="done"
-        ).order_by("-completed_at")
-        return Response(TaskSerializer(tasks, many=True).data)  
+
+class NudgeView(APIView):
+    """Avatar ke liye ek chhoti Hinglish line (AI), cache ke saath."""
+
+    def post(self, request, pk):
+        task = get_object_or_404(Task, pk=pk, user=request.user)
+
+        tone = request.data.get("tone")
+        if tone not in TONES:
+            return Response(
+                {"error": "tone must be friendly, nudging or strict"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if task.status != "pending":
+            return Response(
+                {"error": "Only pending tasks get nudges"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        hours_left = (task.deadline - timezone.now()).total_seconds() / 3600
+        key = (
+            f"nudge:{task.id}:{tone}:{task.snooze_count}:{time_bucket(hours_left)}"
+        )
+
+        message = cache.get(key)
+        if message is None:
+            try:
+                message = generate_nudge(
+                    task.title, tone, hours_left, task.snooze_count
+                )
+            except Exception:
+                logger.exception("Nudge generation failed")
+                return Response(
+                    {"error": "Could not generate a nudge"},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+            cache.set(key, message, 6 * 3600)
+
+        return Response({"message": message})

@@ -27,3 +27,5 @@ class RoadmapSerializer(serializers.ModelSerializer):
     class Meta:
         model = Roadmap
         fields = ["id", "task", "plan_type", "steps", "resources", "is_active", "created_at"]
+
+    

@@ -1,9 +1,9 @@
-from django.urls import path
+﻿from django.urls import path
 
+from .nudge import NudgeView
 from .views import (
     CaptureView,
     CompleteTaskView,
-    CompletedTasksView,
     PrioritizedTasksView,
     RoadmapView,
     SnoozeTaskView,
@@ -13,9 +13,9 @@ from .views import (
 urlpatterns = [
     path("", TaskListCreateView.as_view()),
     path("prioritize", PrioritizedTasksView.as_view()),
-    path("completed", CompletedTasksView.as_view()),
     path("capture", CaptureView.as_view()),
     path("<uuid:pk>/snooze", SnoozeTaskView.as_view()),
-    path("<uuid:pk>/roadmap", RoadmapView.as_view()),
     path("<uuid:pk>/complete", CompleteTaskView.as_view()),
+    path("<uuid:pk>/roadmap", RoadmapView.as_view()),
+    path("<uuid:pk>/nudge", NudgeView.as_view()),
 ]

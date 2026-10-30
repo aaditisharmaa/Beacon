@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("beacon", {
   // avatar: ghumana aur click
   moveAvatar: (dx, dy) => ipcRenderer.send("avatar:move", dx, dy),
   avatarClicked: () => ipcRenderer.send("avatar:click"),
+  screenshotClicked: () => ipcRenderer.send("avatar:screenshot"),
 
   // avatar click -> main window: clipboard ka text Capture box mein
   onCaptureText: (callback) => {

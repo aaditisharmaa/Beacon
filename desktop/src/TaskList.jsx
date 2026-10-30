@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import Calendar from "./Calendar";
 import Capture from "./Capture";
 import Roadmap from "./Roadmap";
 import Sprite from "./Sprite";
-import { completeTask, getCompleted, getTasks, snoozeTask } from "./api";
+import { completeTask, getCompleted, getNudge, getTasks, snoozeTask } from "./api";
 import { computeAvatarState, dueText, taskTone } from "./avatarState";
 
 function greeting() {
@@ -105,6 +105,26 @@ export default function TaskList({ token, onExpired, onStats, incoming }) {
   useEffect(() => {
     if (loading) return;
     window.beacon?.sendAvatarState(computeAvatarState(tasks));
+  }, [tasks, loading]);
+
+  // AI ki Hinglish line aane par avatar ki template line badal do
+  useEffect(() => {
+    if (loading || !tasks[0]) return undefined;
+    const top = tasks[0];
+    const base = computeAvatarState(tasks);
+    let cancelled = false;
+    getNudge(token, top.id, base.tone)
+      .then((r) => {
+        if (!cancelled && r?.message) {
+          window.beacon?.sendAvatarState({ tone: base.tone, message: r.message });
+        }
+      })
+      .catch(() => {
+        // AI na chale toh template wali line rehne do
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [tasks, loading]);
 
   // logout par avatar ko reset karo

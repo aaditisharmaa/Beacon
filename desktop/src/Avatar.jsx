@@ -35,31 +35,75 @@ function usePointerDrag(onClick) {
   };
 }
 
+const menuBtn = {
+  padding: "6px 10px",
+  borderRadius: 8,
+  border: "1px solid currentColor",
+  background: "rgba(255,255,255,0.6)",
+  color: "inherit",
+  font: "inherit",
+  cursor: "pointer",
+};
+
 export default function Avatar() {
   const [state, setState] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => window.beacon?.onAvatarState(setState), []);
 
-  const petDrag = usePointerDrag(() => window.beacon?.avatarClicked());
+  // menu 6 second baad apne aap band
+  useEffect(() => {
+    if (!menuOpen) return;
+    const t = setTimeout(() => setMenuOpen(false), 6000);
+    return () => clearTimeout(t);
+  }, [menuOpen]);
+
+  // pet pe click = menu khulo/band
+  const petDrag = usePointerDrag(() => setMenuOpen((o) => !o));
   const bubbleDrag = usePointerDrag();
 
   const tone = state?.tone ?? "friendly";
   const message =
     state?.message ?? "Log in and I'll watch your deadlines 👀";
 
+  function pickClipboard() {
+    setMenuOpen(false);
+    window.beacon?.avatarClicked();
+  }
+
+  function pickScreenshot() {
+    setMenuOpen(false);
+    window.beacon?.screenshotClicked();
+  }
+
   return (
     <div className="avatar">
-      <div
-        className={`bubble bubble-${tone}`}
-        style={{ cursor: "grab", touchAction: "none" }}
-        title="Drag me"
-        {...bubbleDrag}
-      >
-        {message}
-      </div>
+      {menuOpen ? (
+        // menu draggable bubble ke andar nahi hai, warna button clicks kho jayenge
+        <div
+          className={`bubble bubble-${tone}`}
+          style={{ display: "flex", gap: 8, justifyContent: "center" }}
+        >
+          <button type="button" style={menuBtn} onClick={pickScreenshot}>
+            Screenshot
+          </button>
+          <button type="button" style={menuBtn} onClick={pickClipboard}>
+            Clipboard
+          </button>
+        </div>
+      ) : (
+        <div
+          className={`bubble bubble-${tone}`}
+          style={{ cursor: "grab", touchAction: "none" }}
+          title="Drag me"
+          {...bubbleDrag}
+        >
+          {message}
+        </div>
+      )}
 
       <div
-        title="Click: capture copied text. Drag: move me"
+        title="Click: menu. Drag: move me"
         style={{ cursor: "pointer", touchAction: "none" }}
         {...petDrag}
       >

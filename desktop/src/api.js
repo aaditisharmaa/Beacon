@@ -93,3 +93,8 @@ export async function refreshAccess(refresh) {
   if (!res.ok) throw new Error("SESSION_EXPIRED");
   return res.json(); // { access }
 }
+export const getNudge = (token, id, tone) =>
+  authFetch(`/api/tasks/${id}/nudge`, token, {
+    method: "POST",
+    body: JSON.stringify({ tone }),
+  });

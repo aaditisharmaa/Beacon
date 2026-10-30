@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+  />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      cursor: crosshair;
+      user-select: none;
+      background: #000;
+    }
+    #bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    #dim {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      pointer-events: none;
+    }
+    #box {
+      position: fixed;
+      display: none;
+      border: 1.5px solid #fff;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+      pointer-events: none;
+    }
+    #hint {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font: 13px system-ui, sans-serif;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <img id="bg" alt="" />
+  <div id="dim"></div>
+  <div id="box"></div>
+  <div id="hint">Drag karke area select karo. Esc = cancel</div>
+  <script src="selector.js"></script>
+</body>
+</html>

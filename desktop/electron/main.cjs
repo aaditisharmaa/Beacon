@@ -7,6 +7,8 @@ const {
   screen,
   shell,
 } = require("electron");
+const { captureRegion, ocr } = require('./screenshot.cjs');
+console.log("screenshot exports:", Object.keys(require('./screenshot.cjs')));
 
 const APP_URL = "http://localhost:5173";
 const TONES = ["friendly", "nudging", "strict"];
@@ -71,6 +73,29 @@ ipcMain.on("avatar:click", async (event) => {
   if (text && !mainWin.isDestroyed()) {
     mainWin.webContents.send("capture:text", text);
   }
+});
+// avatar ke menu se Screenshot: area select -> OCR -> text Capture box ko
+ipcMain.on("avatar:screenshot", async (event) => {
+  console.log("avatar:screenshot aaya");
+  if (!avatarWin || event.sender !== avatarWin.webContents) return;
+  if (!mainWin || mainWin.isDestroyed()) return;
+
+  let text = "";
+  try {
+    const png = await captureRegion([avatarWin, mainWin]);
+    if (!png) return; // user ne Esc dabaya ya chhota drag kiya
+    const raw = await ocr(png);
+    text = raw.trim().slice(0, 5000);
+  } catch (err) {
+    console.error("screenshot capture failed:", err);
+    return;
+  }
+
+  if (!mainWin || mainWin.isDestroyed()) return;
+  if (mainWin.isMinimized()) mainWin.restore();
+  mainWin.show();
+  mainWin.focus();
+  if (text) mainWin.webContents.send("capture:text", text);
 });
 
 function webPrefs() {
