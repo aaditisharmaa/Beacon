@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Analytics from "./Analytics";
+import CalendarSync from "./CalendarSync";
 import FocusPanel from "./FocusPanel";
 import Login from "./Login";
 import Opportunities from "./Opportunities";
@@ -165,6 +166,12 @@ export default function App() {
             Opportunities
           </button>
 
+          <button
+            className={"nav-item" + (view === "gcal" ? " active" : "")}
+            onClick={() => setView("gcal")}
+          >
+            Google Calendar
+          </button>
           <p className="nav-label tools">Tools</p>
           <button
             className={"nav-item" + (view === "focus" ? " active" : "")}
@@ -210,7 +217,9 @@ export default function App() {
         {view === "opportunities" && (
           <Opportunities key={tokens.access} token={tokens.access} onExpired={renew} />
         )}
-        {view === "focus" && <FocusPanel />}
+        {view === "gcal" && (
+          <CalendarSync key={tokens.access} token={tokens.access} onExpired={renew} />
+        )}        {view === "focus" && <FocusPanel />}
         {view === "profile" && profile && (
           <Onboarding
             token={tokens.access}

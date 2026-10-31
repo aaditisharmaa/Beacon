@@ -135,3 +135,10 @@ export const suggestSkills = (token, link, text) =>
 
 export const getRecovery = (token, id) =>
   authFetch(`/api/tasks/${id}/recovery`, token, { method: "POST" });
+
+export const getCalendarStatus = (token) => authFetch('/api/calendar/status', token);
+
+export const getCalendarEvents = (token) => authFetch('/api/calendar/events', token);
+
+export const disconnectCalendar = (token) =>
+  authFetch('/api/calendar/disconnect', token, { method: 'POST' });

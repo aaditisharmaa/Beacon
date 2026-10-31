@@ -6,4 +6,5 @@ urlpatterns = [
     path("api/tasks/", include("tasks.urls")),
     path("api/auth/", include("users.urls")),
     path("api/opportunities/", include("opportunities.urls")),
+    path("api/calendar/", include("gcal.urls")),
 ]
