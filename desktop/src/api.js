@@ -122,3 +122,5 @@ export const transcribeAudio = (token, blob) => {
 
 export const getFirstStep = (token, id) =>
   authFetch(`/api/tasks/${id}/first-step`, token, { method: "POST" });
+
+export const getAnalytics = (token) => authFetch('/api/tasks/analytics', token);

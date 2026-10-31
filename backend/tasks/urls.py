@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .analytics import AnalyticsView
 from .microstep import FirstStepView
 from .nudge import NudgeView
 from .views import (
@@ -16,6 +17,7 @@ urlpatterns = [
     path("", TaskListCreateView.as_view()),
     path("prioritize", PrioritizedTasksView.as_view()),
     path("capture", CaptureView.as_view()),
+    path("analytics", AnalyticsView.as_view()),
     path("transcribe", TranscribeView.as_view()),
     path("<uuid:pk>/snooze", SnoozeTaskView.as_view()),
     path("<uuid:pk>/complete", CompleteTaskView.as_view()),

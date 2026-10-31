@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Analytics from "./Analytics";
 import FocusPanel from "./FocusPanel";
 import Login from "./Login";
 import Onboarding from "./Onboarding";
@@ -149,6 +150,13 @@ export default function App() {
             Wall <span className="count">{stats?.doneTotal ?? 0}</span>
           </button>
 
+          <button
+            className={"nav-item" + (view === "analytics" ? " active" : "")}
+            onClick={() => setView("analytics")}
+          >
+            Analytics
+          </button>
+
           <p className="nav-label tools">Tools</p>
           <button
             className={"nav-item" + (view === "focus" ? " active" : "")}
@@ -187,6 +195,9 @@ export default function App() {
         </div>
         {view === "wall" && (
           <Wall key={tokens.access} token={tokens.access} onExpired={renew} />
+        )}
+        {view === "analytics" && (
+          <Analytics key={tokens.access} token={tokens.access} onExpired={renew} />
         )}
         {view === "focus" && <FocusPanel />}
         {view === "profile" && profile && (
