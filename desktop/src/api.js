@@ -142,3 +142,11 @@ export const getCalendarEvents = (token) => authFetch('/api/calendar/events', to
 
 export const disconnectCalendar = (token) =>
   authFetch('/api/calendar/disconnect', token, { method: 'POST' });
+
+export const extractMeeting = (token, title, notes) =>
+  authFetch('/api/meetings/extract', token, {
+    method: 'POST',
+    body: JSON.stringify({ title, notes }),
+  });
+
+export const getRecentEvents = (token) => authFetch('/api/calendar/events?recent=1', token);

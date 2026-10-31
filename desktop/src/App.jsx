@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Analytics from "./Analytics";
 import CalendarSync from "./CalendarSync";
+import MeetingMode from "./MeetingMode";
 import FocusPanel from "./FocusPanel";
 import Login from "./Login";
 import Opportunities from "./Opportunities";
@@ -11,6 +12,7 @@ import Wall from "./Wall";
 import {
   clearTokens,
   getProfile,
+  getRecentEvents,
   loadTokens,
   refreshAccess,
   saveTokens,
@@ -22,6 +24,9 @@ export default function App() {
   const [view, setView] = useState("tasks");
   const [stats, setStats] = useState(null);
   const [incoming, setIncoming] = useState(null);
+  const [taskVersion, setTaskVersion] = useState(0);
+  const [meetingTitle, setMeetingTitle] = useState("");
+  const [ended, setEnded] = useState(null);
   // undefined = load ho raha hai, null = load nahi hua (app phir bhi chalao)
   const [profile, setProfile] = useState(undefined);
 
@@ -87,6 +92,53 @@ export default function App() {
     []
   );
 
+  // calendar mein meeting abhi khatam hui? (sirf jab Google Calendar connected hai)
+  useEffect(() => {
+    if (!tokens?.access) return undefined;
+    let stop = false;
+    async function check() {
+      try {
+        const evs = await getRecentEvents(tokens.access);
+        const now = Date.now();
+        let seen = [];
+        try { seen = JSON.parse(localStorage.getItem("beacon_meeting_seen") || "[]"); } catch { seen = []; }
+        const fresh = evs.find(
+          (e) =>
+            e.end && !e.all_day &&
+            new Date(e.end).getTime() <= now &&
+            now - new Date(e.end).getTime() < 30 * 60000 &&
+            !seen.includes(e.id + e.end)
+        );
+        if (fresh && !stop) setEnded(fresh);
+      } catch {
+        // calendar connected nahi ya server band, chup raho
+      }
+    }
+    check();
+    const timer = setInterval(check, 120000);
+    return () => { stop = true; clearInterval(timer); };
+  }, [tokens?.access]);
+
+  function markSeen(e) {
+    try {
+      const seen = JSON.parse(localStorage.getItem("beacon_meeting_seen") || "[]");
+      localStorage.setItem("beacon_meeting_seen", JSON.stringify([...seen, e.id + e.end].slice(-50)));
+    } catch {
+      // ignore
+    }
+  }
+
+  function openMeeting() {
+    markSeen(ended);
+    setMeetingTitle(ended.title);
+    setEnded(null);
+    setView("meeting");
+  }
+
+  function dismissMeeting() {
+    markSeen(ended);
+    setEnded(null);
+  }
   function profileSaved(p) {
     setProfile(p);
     setView("tasks");
@@ -172,6 +224,12 @@ export default function App() {
           >
             Google Calendar
           </button>
+          <button
+            className={"nav-item" + (view === "meeting" ? " active" : "")}
+            onClick={() => setView("meeting")}
+          >
+            Meeting mode
+          </button>
           <p className="nav-label tools">Tools</p>
           <button
             className={"nav-item" + (view === "focus" ? " active" : "")}
@@ -198,10 +256,21 @@ export default function App() {
       </aside>
 
       <main className="main">
-        {/* TaskList hamesha mounted rehta hai, taaki pet ka state na reset ho */}
+        {ended && view !== "meeting" && (
+          <div
+            className="task"
+            style={{ position: "fixed", top: 12, right: 12, zIndex: 50, maxWidth: 320 }}
+          >
+            <strong>{ended.title}</strong> just ended. Kaam bata do?
+            <div className="actions">
+              <button onClick={openMeeting}>Add action items</button>
+              <button className="ghost" onClick={dismissMeeting}>Dismiss</button>
+            </div>
+          </div>
+        )}        {/* TaskList hamesha mounted rehta hai, taaki pet ka state na reset ho */}
         <div style={{ display: view === "tasks" ? "contents" : "none" }}>
           <TaskList
-            key={tokens.access}
+            key={tokens.access + taskVersion}
             token={tokens.access}
             onExpired={renew}
             onStats={setStats}
@@ -219,6 +288,14 @@ export default function App() {
         )}
         {view === "gcal" && (
           <CalendarSync key={tokens.access} token={tokens.access} onExpired={renew} />
+        )}        {view === "meeting" && (
+          <MeetingMode
+            initialTitle={meetingTitle}
+            key={tokens.access + meetingTitle}
+            token={tokens.access}
+            onExpired={renew}
+            onTasksChanged={() => setTaskVersion((v) => v + 1)}
+          />
         )}        {view === "focus" && <FocusPanel />}
         {view === "profile" && profile && (
           <Onboarding

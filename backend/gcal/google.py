@@ -72,14 +72,14 @@ def access_token(refresh_token):
     return res.json()["access_token"]
 
 
-def fetch_events(refresh_token, days=14):
+def fetch_events(refresh_token, days=14, past_minutes=0):
     token = access_token(refresh_token)
     now = datetime.now(timezone.utc)
     res = httpx.get(
         EVENTS_URL,
         headers={"Authorization": f"Bearer {token}"},
         params={
-            "timeMin": now.isoformat().replace("+00:00", "Z"),
+            "timeMin": (now - timedelta(minutes=past_minutes)).isoformat().replace("+00:00", "Z"),
             "timeMax": (now + timedelta(days=days)).isoformat().replace("+00:00", "Z"),
             "singleEvents": "true",
             "orderBy": "startTime",
@@ -101,11 +101,14 @@ def fetch_events(refresh_token, days=14):
             when = datetime.fromisoformat(start["date"] + "T23:59:00").replace(tzinfo=IST)
         else:
             continue
+        end = (item.get("end") or {}).get("dateTime")
         out.append(
             {
                 "id": item.get("id", ""),
                 "title": (item.get("summary") or "Untitled event")[:200],
                 "start": when.isoformat(),
+                "end": end,
+                "all_day": "dateTime" not in start,
             }
         )
     return out

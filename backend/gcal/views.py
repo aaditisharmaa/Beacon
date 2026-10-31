@@ -68,7 +68,7 @@ class EventsView(APIView):
         if not account:
             return Response({"error": "Google Calendar is not connected"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            events = fetch_events(account.refresh_token)
+            events = fetch_events(account.refresh_token, past_minutes=30 if request.GET.get("recent") else 0)
         except ReconnectNeeded:
             account.delete()
             return Response({"error": "Google access expired, please connect again"}, status=status.HTTP_400_BAD_REQUEST)
