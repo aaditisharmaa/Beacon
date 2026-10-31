@@ -148,18 +148,6 @@ export default function App() {
           >
             Wall <span className="count">{stats?.doneTotal ?? 0}</span>
           </button>
-          <button className="nav-item" disabled>
-            Roadmaps <span className="soon">soon</span>
-          </button>
-          <button className="nav-item" disabled>
-            Schedule <span className="soon">soon</span>
-          </button>
-          <button className="nav-item" disabled>
-            Analytics <span className="soon">soon</span>
-          </button>
-          <button className="nav-item" disabled>
-            Opportunities <span className="soon">soon</span>
-          </button>
 
           <p className="nav-label tools">Tools</p>
           <button
@@ -167,9 +155,6 @@ export default function App() {
             onClick={() => setView("focus")}
           >
             Focus mode
-          </button>
-          <button className="nav-item" disabled>
-            Settings <span className="soon">soon</span>
           </button>
         </nav>
 
