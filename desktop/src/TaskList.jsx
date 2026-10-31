@@ -3,7 +3,7 @@ import Calendar from "./Calendar";
 import Capture from "./Capture";
 import Roadmap from "./Roadmap";
 import Sprite from "./Sprite";
-import { completeTask, getCompleted, getFirstStep, getNudge, getTasks, snoozeTask } from "./api";
+import { completeTask, getCompleted, getFirstStep, getNudge, getRecovery, getTasks, snoozeTask } from "./api";
 import { computeAvatarState, dueText, taskTone } from "./avatarState";
 
 function greeting() {
@@ -83,6 +83,66 @@ function FirstStep({ token, taskId, onExpired }) {
   );
 }
 
+function Recovery({ task, token, onExpired }) {
+  const [plan, setPlan] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const hoursLeft = (new Date(task.deadline) - Date.now()) / 36e5;
+  if (hoursLeft > 24) return null;
+
+  async function load() {
+    setBusy(true);
+    setErr("");
+    try {
+      setPlan(await getRecovery(token, task.id));
+    } catch (e) {
+      if (e.message === "SESSION_EXPIRED") onExpired();
+      else setErr("Could not build a recovery plan, try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(plan.message);
+      setCopied(true);
+    } catch {
+      setErr("Could not copy, select the text manually.");
+    }
+  }
+
+  return (
+    <div>
+      {!plan && (
+        <button className="ghost" onClick={load} disabled={busy}>
+          {busy ? "Thinking..." : hoursLeft <= 0 ? "Recovery plan" : "Backup plan"}
+        </button>
+      )}
+      {plan && (
+        <div>
+          <p><strong>What you can still save:</strong></p>
+          <ol>
+            {plan.salvage.map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ol>
+          <p><strong>Extension request draft:</strong></p>
+          <textarea rows={7} readOnly value={plan.message} />
+          <div className="actions">
+            <button className="ghost" onClick={copy}>
+              {copied ? "Copied" : "Copy message"}
+            </button>
+          </div>
+        </div>
+      )}
+      {err && <p className="error">{err}</p>}
+    </div>
+  );
+}
+
 function TaskCard({ task, token, run, openId, setOpenId, onExpired, front }) {
   return (
   
@@ -104,6 +164,7 @@ function TaskCard({ task, token, run, openId, setOpenId, onExpired, front }) {
         </p>
       )}
       <FirstStep token={token} taskId={task.id} onExpired={onExpired} />
+      <Recovery task={task} token={token} onExpired={onExpired} />
       <div className="actions">
         <button
           className="ghost"

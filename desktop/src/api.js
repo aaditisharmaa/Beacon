@@ -132,3 +132,6 @@ export const suggestSkills = (token, link, text) =>
     method: 'POST',
     body: JSON.stringify({ link, text }),
   });
+
+export const getRecovery = (token, id) =>
+  authFetch(`/api/tasks/${id}/recovery`, token, { method: "POST" });

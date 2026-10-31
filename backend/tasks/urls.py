@@ -2,6 +2,7 @@ from django.urls import path
 
 from .analytics import AnalyticsView
 from .microstep import FirstStepView
+from .recovery import RecoveryView
 from .nudge import NudgeView
 from .views import (
     CaptureView,
@@ -24,4 +25,5 @@ urlpatterns = [
     path("<uuid:pk>/roadmap", RoadmapView.as_view()),
     path("<uuid:pk>/nudge", NudgeView.as_view()),
     path("<uuid:pk>/first-step", FirstStepView.as_view()),
+    path("<uuid:pk>/recovery", RecoveryView.as_view()),
 ]
