@@ -5,4 +5,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/tasks/", include("tasks.urls")),
     path("api/auth/", include("users.urls")),
+    path("api/opportunities/", include("opportunities.urls")),
 ]

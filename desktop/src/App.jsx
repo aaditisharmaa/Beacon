@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Analytics from "./Analytics";
 import FocusPanel from "./FocusPanel";
 import Login from "./Login";
+import Opportunities from "./Opportunities";
 import Onboarding from "./Onboarding";
 import Sprite from "./Sprite";
 import TaskList from "./TaskList";
@@ -157,6 +158,13 @@ export default function App() {
             Analytics
           </button>
 
+          <button
+            className={"nav-item" + (view === "opportunities" ? " active" : "")}
+            onClick={() => setView("opportunities")}
+          >
+            Opportunities
+          </button>
+
           <p className="nav-label tools">Tools</p>
           <button
             className={"nav-item" + (view === "focus" ? " active" : "")}
@@ -198,6 +206,9 @@ export default function App() {
         )}
         {view === "analytics" && (
           <Analytics key={tokens.access} token={tokens.access} onExpired={renew} />
+        )}
+        {view === "opportunities" && (
+          <Opportunities key={tokens.access} token={tokens.access} onExpired={renew} />
         )}
         {view === "focus" && <FocusPanel />}
         {view === "profile" && profile && (
