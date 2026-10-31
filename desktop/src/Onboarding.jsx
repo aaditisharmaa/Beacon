@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./onboarding.css";
-import { saveProfile } from "./api";
+import { saveProfile, suggestSkills } from "./api";
 
 const YEARS = [1, 2, 3, 4];
 
@@ -35,6 +35,34 @@ export default function Onboarding({
   const [busy, setBusy] = useState(false);
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+
+  const [proj, setProj] = useState({ link: "", text: "" });
+  const [sugg, setSugg] = useState([]);
+  const [sBusy, setSBusy] = useState(false);
+  const [sErr, setSErr] = useState("");
+
+  async function findSkills() {
+    setSErr("");
+    setSBusy(true);
+    try {
+      const r = await suggestSkills(token, proj.link.trim(), proj.text.trim());
+      setSugg(r.skills);
+      if (r.skills.length === 0) setSErr("No clear skills found, add more detail.");
+    } catch (err) {
+      if (err.message === "SESSION_EXPIRED") onExpired();
+      else if (err instanceof TypeError)
+        setSErr("Cannot reach the server. Is Django running?");
+      else setSErr(err.message);
+    } finally {
+      setSBusy(false);
+    }
+  }
+
+  function addSkill(s) {
+    const cur = toList(form.skills);
+    if (!cur.includes(s)) setForm({ ...form, skills: [...cur, s].join(", ") });
+    setSugg(sugg.filter((x) => x !== s));
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -125,6 +153,46 @@ export default function Onboarding({
         )}
       </label>
 
+      <div className="ob-field">
+        <span>Add skills from a project (optional)</span>
+        <input
+          value={proj.link}
+          onChange={(e) => setProj({ ...proj, link: e.target.value })}
+          onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+          placeholder="Project or GitHub link"
+        />
+        <textarea
+          rows={3}
+          value={proj.text}
+          onChange={(e) => setProj({ ...proj, text: e.target.value })}
+          placeholder="Describe the project in 2-3 lines"
+        />
+        <div className="actions">
+          <button
+            type="button"
+            className="ghost"
+            onClick={findSkills}
+            disabled={sBusy || !proj.text.trim()}
+          >
+            {sBusy ? "Thinking..." : "Suggest skills"}
+          </button>
+        </div>
+        {sErr && <p className="error">{sErr}</p>}
+        {sugg.length > 0 && (
+          <div className="ob-chips">
+            {sugg.map((s) => (
+              <button
+                type="button"
+                key={s}
+                className="ob-chip"
+                onClick={() => addSkill(s)}
+              >
+                + {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <label className="ob-field">
         <span>Interests (comma separated)</span>
         <input

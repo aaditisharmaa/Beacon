@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from .skills import SuggestSkillsView
 from .views import ProfileView, RegisterView
 
 urlpatterns = [
@@ -8,4 +9,5 @@ urlpatterns = [
     path("login", TokenObtainPairView.as_view()),
     path("refresh", TokenRefreshView.as_view()),
     path("profile", ProfileView.as_view()),
+    path("skills/suggest", SuggestSkillsView.as_view()),
 ]

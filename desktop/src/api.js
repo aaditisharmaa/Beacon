@@ -126,3 +126,9 @@ export const getFirstStep = (token, id) =>
 export const getAnalytics = (token) => authFetch('/api/tasks/analytics', token);
 
 export const getOpportunities = (token) => authFetch('/api/opportunities/match', token);
+
+export const suggestSkills = (token, link, text) =>
+  authFetch('/api/auth/skills/suggest', token, {
+    method: 'POST',
+    body: JSON.stringify({ link, text }),
+  });
