@@ -45,8 +45,12 @@ export default function Onboarding({
     setSErr("");
     setSBusy(true);
     try {
-      const r = await suggestSkills(token, proj.link.trim(), proj.text.trim());
+      const r = await suggestSkills(token, proj.link.trim(), proj.text.trim(), true);
       setSugg(r.skills);
+      setForm((current) => {
+        const merged = toList(`${current.skills}, ${r.skills.join(", ")}`);
+        return { ...current, skills: merged.join(", ") };
+      });
       if (r.skills.length === 0) setSErr("No clear skills found, add more detail.");
     } catch (err) {
       if (err.message === "SESSION_EXPIRED") onExpired();

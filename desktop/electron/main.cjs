@@ -11,8 +11,11 @@ const {
   shell,
 } = require("electron");
 const { createFocus, listRunningApps, startPowerShellWatcher } = require("./focus.cjs");
+const { execFile } = require("child_process");
 
-const APP_URL = "http://localhost:5173";
+const APP_URL = app.isPackaged
+  ? `file://${path.join(__dirname, "..", "dist", "index.html")}`
+  : "http://localhost:5173";
 const TONES = ["friendly", "nudging", "strict"];
 const AVATAR_W = 280;
 const AVATAR_H = 240;
@@ -21,6 +24,9 @@ let mainWin = null;
 let avatarWin = null;
 let lastState = null; // task wali line (TaskList bhejta hai)
 let avatarOverride = null; // Focus mode ki line, jab tak hai tab tak ye upar rehti hai
+let idleTimer = null;
+let idleHoldTimer = null;
+let lastIdleTier = "";
 
 function isValidState(s) {
   return (
@@ -35,6 +41,81 @@ function isValidState(s) {
 function sendStateToAvatar() {
   if (avatarWin && !avatarWin.isDestroyed()) {
     avatarWin.webContents.send("avatar:state", avatarOverride ?? lastState);
+  }
+
+  function idleSeconds() {
+    return new Promise((resolve) => {
+      if (process.platform !== "win32") return resolve(0);
+      const script = `
+  Add-Type @'
+  using System;
+  using System.Runtime.InteropServices;
+  public struct BeaconLastInput {
+    [MarshalAs(UnmanagedType.U4)] public uint cbSize;
+    [MarshalAs(UnmanagedType.U4)] public uint dwTime;
+  }
+  public static class BeaconIdle {
+    [DllImport("user32.dll")] public static extern bool GetLastInputInfo(ref BeaconLastInput plii);
+  }
+  '@
+  $li = New-Object BeaconLastInput
+  $li.cbSize = [System.Runtime.InteropServices.Marshal]::SizeOf($li)
+  if ([BeaconIdle]::GetLastInputInfo([ref]$li)) {
+    [Console]::Write(([Environment]::TickCount - $li.dwTime) / 1000)
+  }
+  `;
+      const encoded = Buffer.from(script, "utf16le").toString("base64");
+      execFile(
+        "powershell.exe",
+        ["-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
+        { windowsHide: true, timeout: 10000 },
+        (err, stdout) => {
+          const seconds = Number(String(stdout).trim());
+          resolve(err || !Number.isFinite(seconds) ? 0 : seconds);
+        }
+      );
+    });
+  }
+
+  function startIdleMonitoring() {
+    if (idleTimer) return;
+    idleTimer = setInterval(async () => {
+      const seconds = await idleSeconds();
+      let tier = "";
+      if (seconds >= 20 * 60) tier = "strict";
+      else if (seconds >= 10 * 60) tier = "nudging";
+      else if (seconds >= 5 * 60) tier = "friendly";
+
+      if (!tier) {
+        lastIdleTier = "";
+        if (avatarOverride?.source === "idle") {
+          avatarOverride = null;
+          sendStateToAvatar();
+        }
+        return;
+      }
+
+      if (tier === lastIdleTier) return;
+      lastIdleTier = tier;
+      clearTimeout(idleHoldTimer);
+      const minutes = Math.floor(seconds / 60);
+      const message =
+        tier === "strict"
+          ? `You've been away ${minutes} min. Come back and finish one small step.`
+          : tier === "nudging"
+            ? `Hey, ${minutes} min away. Your task is still waiting, but we can start easy.`
+            : `A small break of ${minutes} min is okay. Ready when you are?`;
+      avatarOverride = { tone: tier, message, source: "idle" };
+      sendStateToAvatar();
+    }, 15000);
+  }
+
+  function stopIdleMonitoring() {
+    clearInterval(idleTimer);
+    idleTimer = null;
+    clearTimeout(idleHoldTimer);
+    idleHoldTimer = null;
+    lastIdleTier = "";
   }
 }
 
@@ -169,7 +250,8 @@ function createMainWindow() {
     return { action: "deny" };
   });
 
-  win.loadURL(APP_URL);
+  if (app.isPackaged) win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+  else win.loadURL(APP_URL);
   return win;
 }
 
@@ -190,7 +272,11 @@ function createAvatarWindow() {
     hasShadow: false,
     webPreferences: webPrefs(),
   });
-  win.loadURL(`${APP_URL}/#/avatar`);
+  if (app.isPackaged) {
+    win.loadFile(path.join(__dirname, "..", "dist", "index.html"), { hash: "/avatar" });
+  } else {
+    win.loadURL(`${APP_URL}/#/avatar`);
+  }
   if (process.env.AVATAR_DEBUG) win.webContents.openDevTools({ mode: "detach" });
   // avatar load hote hi jo state hai wo bhej do
   win.webContents.on("did-finish-load", sendStateToAvatar);
@@ -200,10 +286,12 @@ function createAvatarWindow() {
 function startApp() {
   mainWin = createMainWindow();
   avatarWin = createAvatarWindow();
+  startIdleMonitoring();
 
   // main window band hone par avatar bhi band, aur focus watcher bhi
   mainWin.on("closed", () => {
     focus.stop();
+    stopIdleMonitoring();
     if (avatarWin && !avatarWin.isDestroyed()) avatarWin.close();
     mainWin = null;
     avatarWin = null;
@@ -236,9 +324,11 @@ app.whenReady().then(() => {
 });
 
 // PowerShell watcher kabhi peeche chalta na reh jaye
-app.on("before-quit", () => focus.stop());
+app.on("before-quit", () => {
+  focus.stop();
+  stopIdleMonitoring();
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
-

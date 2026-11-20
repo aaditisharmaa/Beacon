@@ -1,4 +1,4 @@
-const BASE_URL = "http://127.0.0.1:8001";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8001";
 
 export async function login(email, password) {
   const res = await fetch(`${BASE_URL}/api/auth/login`, {
@@ -127,10 +127,10 @@ export const getAnalytics = (token) => authFetch('/api/tasks/analytics', token);
 
 export const getOpportunities = (token) => authFetch('/api/opportunities/match', token);
 
-export const suggestSkills = (token, link, text) =>
+export const suggestSkills = (token, link, text, applyToProfile = false) =>
   authFetch('/api/auth/skills/suggest', token, {
     method: 'POST',
-    body: JSON.stringify({ link, text }),
+    body: JSON.stringify({ link, text, apply_to_profile: applyToProfile }),
   });
 
 export const getRecovery = (token, id) =>

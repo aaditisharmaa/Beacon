@@ -87,13 +87,16 @@ export default function Avatar() {
         // menu draggable bubble ke andar nahi hai, warna button clicks kho jayenge
         <div
           className={`bubble bubble-${tone}`}
-          style={{ display: "flex", gap: 8, justifyContent: "center" }}
+          style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}
         >
           <button type="button" style={menuBtn} onClick={pickScreenshot}>
             Screenshot
           </button>
           <button type="button" style={menuBtn} onClick={pickClipboard}>
             Clipboard
+          </button>
+          <button type="button" style={menuBtn} onClick={pickSpeak}>
+            Speak
           </button>
         </div>
       ) : (
