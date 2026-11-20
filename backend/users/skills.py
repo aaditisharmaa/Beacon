@@ -7,6 +7,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .models import Profile
+
 logger = logging.getLogger(__name__)
 
 PROMPT = """You read a short description of a student's project and list the technical skills it shows.
@@ -38,6 +40,7 @@ class SuggestSkillsView(APIView):
     def post(self, request):
         text = (request.data.get("text") or "").strip()
         link = (request.data.get("link") or "").strip()
+        apply_to_profile = request.data.get("apply_to_profile") is True
         if not text:
             return Response(
                 {"error": "Please describe the project"},
@@ -51,4 +54,9 @@ class SuggestSkillsView(APIView):
                 {"error": "Could not suggest skills, please try again"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        return Response({"skills": skills})
+        if apply_to_profile:
+            profile = Profile.objects.get_or_create(user=request.user)[0]
+            existing = {str(skill).strip().lower() for skill in profile.skills}
+            profile.skills = list(dict.fromkeys([*existing, *skills]))
+            profile.save(update_fields=["skills", "updated_at"])
+        return Response({"skills": skills, "applied": apply_to_profile})

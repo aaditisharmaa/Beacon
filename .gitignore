@@ -4,3 +4,6 @@ node_modules/
 __pycache__/
 *.sqlite3
 dist/
+
+desktop/release/
+backend/staticfiles/

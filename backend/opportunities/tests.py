@@ -3,10 +3,29 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework.test import APIClient, APITestCase
+from django.test import SimpleTestCase
 
 from users.models import Profile
 
 from .models import Opportunity
+from .management.commands.sync_opportunities import infer_tags, parse_feed
+
+
+class OpportunityFeedTests(SimpleTestCase):
+    def test_infers_common_tags(self):
+        self.assertIn("python", infer_tags("Python and Django Hackathon"))
+        self.assertIn("django", infer_tags("Python and Django Hackathon"))
+
+    def test_parses_rss_feed(self):
+        xml = """<?xml version="1.0"?>
+        <rss><channel><item>
+          <title>Python AI Hackathon</title>
+          <link>https://example.com/event</link>
+          <pubDate>Tue, 20 Nov 2026 10:00:00 GMT</pubDate>
+        </item></channel></rss>"""
+        rows = parse_feed(xml, "example.com")
+        self.assertEqual(rows[0]["title"], "Python AI Hackathon")
+        self.assertIn("python", rows[0]["skill_tags"])
 
 
 class MatchTests(APITestCase):

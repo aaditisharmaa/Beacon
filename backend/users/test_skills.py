@@ -26,3 +26,16 @@ class SuggestSkillsTests(APITestCase):
         )
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["skills"], ["python", "django"])
+
+    @patch("users.skills.suggest_skills", return_value=["python", "django"])
+    def test_can_apply_suggested_skills_to_profile(self, _m):
+        self.client.force_authenticate(self.user)
+        res = self.client.post(
+            "/api/auth/skills/suggest",
+            {"text": "Django API project", "apply_to_profile": True},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.data["applied"])
+        self.user.profile.skills = list(self.user.profile.skills)
+        self.assertEqual(set(self.user.profile.skills), {"python", "django"})
